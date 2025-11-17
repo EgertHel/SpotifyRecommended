@@ -78,20 +78,11 @@ def read_data():
 
     return songs
 
-def is_list_string(x):
-    return isinstance(x, str) and x.startswith("[") and x.endswith("]")
-
-def safe_parse(x):
-    try:
-        return ast.literal_eval(x) if is_list_string(x) else x
-    except Exception:
-        return x
-
 
 def clean_data(songs: pd.DataFrame) -> pd.DataFrame:
     songs["release_year"] = songs["release_date"].str[:4].astype(float)
 
-    songs = songs.drop(columns=["playlist_url", "album", "release_date", "artist_popularity"], axis="columns")
+    songs = songs.drop(columns=["playlist_url", "album", "release_date"], axis="columns")
 
     obj_cols = songs.select_dtypes(include="object").columns
     songs[obj_cols] = songs[obj_cols].apply(lambda col: col.str.strip())
