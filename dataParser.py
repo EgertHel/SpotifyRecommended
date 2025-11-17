@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import ast
 import os
 
@@ -26,7 +27,7 @@ def read_data():
                             "tempo": "tempo",
                             "time_signature": "time_signature"})
     
-    # Get and merge artist popularity into 1st songs DF
+    # Get and merge artist popularity into 1st songs songs
     # Read artists data for 1st dataset
     artists1 = pd.read_csv("./data/rawData/artists.csv", encoding="utf-8")
     artists1 = artists1.rename(columns = {"id": "artist_id", "popularity": "artist_popularity"})
@@ -37,7 +38,7 @@ def read_data():
     )
     songs1 = songs1.explode("artist_id")
 
-    # Merge artists popularity with songs DF
+    # Merge artists popularity with songs songs
     songs1 = songs1.merge(artists1[["artist_id", "artist_popularity"]], on="artist_id", how="left")
     agg_dict = {col: "first" for col in songs1.columns if col != "artist_popularity"}
     agg_dict["artist_popularity"] = lambda popularities: list(popularities.dropna())
@@ -77,10 +78,30 @@ def read_data():
 
     return songs
 
+def is_list_string(x):
+    return isinstance(x, str) and x.startswith("[") and x.endswith("]")
+
+def safe_parse(x):
+    try:
+        return ast.literal_eval(x) if is_list_string(x) else x
+    except Exception:
+        return x
 
 
-def clean_data(songs):
-    pass
+def clean_data(songs: pd.DataFrame) -> pd.DataFrame:
+    songs["release_year"] = songs["release_date"].str[:4].astype(float)
+
+    songs = songs.drop(columns=["playlist_url", "album", "release_date", "artist_popularity"], axis="columns")
+
+    obj_cols = songs.select_dtypes(include="object").columns
+    songs[obj_cols] = songs[obj_cols].apply(lambda col: col.str.strip())
+
+    songs = songs.drop_duplicates()
+    songs["song_name"] = songs["song_name"].fillna("Name missing")
+    songs["explicit"] = songs["explicit"].fillna(0.0)
+    songs["release_year"] = songs["release_year"].fillna(np.random.randint(1970, 2024))
+
+    return songs
 
 
 def parseData():
@@ -90,7 +111,7 @@ def parseData():
         return songs
     
     songs = read_data()
-    clean_data(songs)
+    songs = clean_data(songs)
 
     songs.to_pickle("./data/merged_data.pkl")
 
