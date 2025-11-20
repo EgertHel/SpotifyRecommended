@@ -82,15 +82,14 @@ def read_data():
 def clean_data(songs: pd.DataFrame) -> pd.DataFrame:
     songs["release_year"] = songs["release_date"].str[:4].astype(float)
 
-    songs = songs.drop(columns=["playlist_url", "album", "release_date"], axis="columns")
+    songs = songs.drop(columns=["playlist_url", "album", "release_date", "artist_popularity", "artist_genres"], axis="columns")
 
     obj_cols = songs.select_dtypes(include="object").columns
     songs[obj_cols] = songs[obj_cols].apply(lambda col: col.str.strip())
 
     songs = songs.drop_duplicates()
-    songs["song_name"] = songs["song_name"].fillna("Name missing")
+    songs.dropna(subset = ["song_name"], inplace=True)
     songs["explicit"] = songs["explicit"].fillna(0.0)
-    songs["release_year"] = songs["release_year"].fillna(np.random.randint(1970, 2024))
 
     return songs
 
