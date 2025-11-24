@@ -96,14 +96,14 @@ def clean_data(songs: pd.DataFrame) -> pd.DataFrame:
 
 def parseData():
     # Check if data has already been parsed
-    if os.path.exists("./data/merged_data.pkl"):
-        songs = pd.read_pickle("./data/merged_data.pkl")
+    if os.path.exists("./data/cleaned_data.pkl"):
+        songs = pd.read_pickle("./data/cleaned_data.pkl")
         return songs
     
     songs = read_data()
     songs = clean_data(songs)
 
-    songs.to_pickle("./data/merged_data.pkl")
+    songs.to_pickle("./data/cleaned_data.pkl")
 
     
 
