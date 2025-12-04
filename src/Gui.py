@@ -20,7 +20,7 @@ def run_gui(recommender):
         result.delete("1.0", tk.END)
         result.insert(tk.END, f"Recommendations based on {song_name}:\n\n")
         for idx, row in results.iterrows():
-            result.insert(tk.END, f"{idx} {row["song_name"]}\n")
+            result.insert(tk.END, f"{idx} {row['song_name']}\n")
 
     def update_suggestions(event):
         song_suggestions = recommender.songs["song_name"]

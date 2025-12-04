@@ -83,6 +83,7 @@ def clean_data(songs: pd.DataFrame) -> pd.DataFrame:
     songs["release_year"] = songs["release_date"].str[:4].astype(float)
 
     songs = songs.drop(columns=["playlist_url", "album", "release_date", "artist_popularity", "artist_genres"], axis="columns")
+    songs = songs.drop(songs[songs["release_year"] == 1900.0].index)
 
     obj_cols = songs.select_dtypes(include="object").columns
     songs[obj_cols] = songs[obj_cols].apply(lambda col: col.str.strip())
