@@ -1,3 +1,4 @@
+from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import NearestNeighbors
 
@@ -15,6 +16,8 @@ class Recommender:
         self.model = NearestNeighbors(n_neighbors=self.rec_amount + 1, metric="euclidean")
         self.model.fit(X_scaled)
 
+        self.pca = PCA(n_components=2)
+        self.songs["pca_x"], self.songs["pca_y"] = self.pca.fit_transform(X_scaled).T
 
     def recommend(self, song_name):
         song = self.songs[self.songs["song_name"] == song_name]
@@ -32,3 +35,41 @@ class Recommender:
 
         return self.songs[["song_id", "song_name"]].iloc[rec_indices]
 
+    def initialize_plot(self, ax, canvas):
+        ax.clear()
+        sample = self.songs.sample(400)  # show subset for readability
+
+        ax.scatter(sample["pca_x"], sample["pca_y"], s=8, alpha=0.3, label="All songs")
+        ax.set_title("Song Space (PCA)")
+        ax.set_xlabel("PCA 1")
+        ax.set_ylabel("PCA 2")
+
+        canvas.draw()
+
+    def update_plot(self, song_name, rec_ids, ax, canvas):
+        ax.clear()
+
+        # Background songs
+        sample = self.songs.sample(400)
+        ax.scatter(sample["pca_x"], sample["pca_y"], s=8, alpha=0.25, color="gray")
+
+        # Input song
+        input_song = self.songs[self.songs["song_name"] == song_name]
+        ax.scatter(input_song["pca_x"], input_song["pca_y"],
+                   color="red", s=150, marker="*", label="Input Song")
+
+        # Recommended songs
+        rec_songs = self.songs[self.songs["song_id"].isin(rec_ids)]
+        ax.scatter(rec_songs["pca_x"], rec_songs["pca_y"],
+                   color="blue", s=50, label="Recommended Songs")
+
+        # Connect lines
+        for _, r in rec_songs.iterrows():
+            ax.plot([input_song["pca_x"].iloc[0], r["pca_x"]],
+                    [input_song["pca_y"].iloc[0], r["pca_y"]],
+                    alpha=0.4)
+
+        ax.set_title("Recommended Songs in PCA Space")
+        ax.legend()
+
+        canvas.draw()
