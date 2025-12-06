@@ -1,5 +1,8 @@
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import ttk, messagebox
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import matplotlib.pyplot as plt
+
 
 def run_gui(recommender):
 
@@ -22,12 +25,16 @@ def run_gui(recommender):
         for idx, row in results.iterrows():
             song_data = f"{idx} {row['song_name']} - {row['artists']}\n"
             result.insert(tk.END, song_data)
+        
+        recommender.update_plot(song_name,
+                                results["song_id"].tolist(),
+                                ax, canvas)
 
     def update_suggestions(event):
         #song_suggestions = recommender.songs["song_name"]
         
         entry_text = entry.get().lower()
-        
+
         if not entry_text:
             suggestions.place_forget()
             return
@@ -47,6 +54,7 @@ def run_gui(recommender):
             suggestions.insert(tk.END, song_data)
 
         suggestions.place(x=entry.winfo_x(), y=entry.winfo_y()+entry.winfo_height(), width=entry.winfo_width())
+        suggestions.lift()
 
     def enter_selection(event):
         selection = suggestions.get(suggestions.curselection())
@@ -64,20 +72,37 @@ def run_gui(recommender):
     root.geometry("600x400")
     root.resizable(False, False)
 
-    song_label = tk.Label(root, text="Enter a song name:")
+    notebook = ttk.Notebook(root)
+    notebook.pack(fill="both", expand=True)
+
+    tab1 = ttk.Frame(notebook)
+    tab2 = ttk.Frame(notebook)
+
+    notebook.add(tab1, text="Recommendations")
+    notebook.add(tab2, text="Visualization")
+
+    # ---------------------- TAB 1 CONTENT ----------------------
+    song_label = tk.Label(tab1, text="Enter a song name:")
     song_label.pack(pady=10)
 
-    entry = tk.Entry(root, width=50)
+    entry = tk.Entry(tab1, width=50)
     entry.bind("<KeyRelease>", update_suggestions)
     entry.pack()
 
-    suggestions = tk.Listbox(root)
+    suggestions = tk.Listbox(tab1)
     suggestions.bind("<<ListboxSelect>>", enter_selection)
 
-    run_button = tk.Button(root, text="Get recommendations", command=run_algorithm)
+    run_button = tk.Button(tab1, text="Get recommendations", command=run_algorithm)
     run_button.pack(pady=10)
 
-    result = tk.Text(root, height=15, width=70)
+    result = tk.Text(tab1, height=20, width=80)
     result.pack(pady=10)
+
+    # ---------------------- TAB 2 CONTENT (PCA Plot) ----------------------
+    fig, ax = plt.subplots(figsize=(6, 5))
+    canvas = FigureCanvasTkAgg(fig, master=tab2)
+    canvas.get_tk_widget().pack(fill="both", expand=True, pady=20)
+
+    recommender.initialize_plot(ax, canvas)
 
     root.mainloop()
