@@ -20,10 +20,11 @@ def run_gui(recommender):
         result.delete("1.0", tk.END)
         result.insert(tk.END, f"Recommendations based on {song_name}:\n\n")
         for idx, row in results.iterrows():
-            result.insert(tk.END, f"{idx} {row['song_name']}\n")
+            song_data = f"{idx} {row['song_name']} - {row['artists']}\n"
+            result.insert(tk.END, song_data)
 
     def update_suggestions(event):
-        song_suggestions = recommender.songs["song_name"]
+        #song_suggestions = recommender.songs["song_name"]
         
         entry_text = entry.get().lower()
         
@@ -31,22 +32,29 @@ def run_gui(recommender):
             suggestions.place_forget()
             return
         
-        matching_songs = [song for song in song_suggestions if entry_text in song.lower()]
+        matching_songs = recommender.songs[recommender.songs["song_name"].str.lower().str.contains(entry_text)]
+        #matching_songs = [song for song in song_suggestions if entry_text in song.lower()]
 
-        if not matching_songs:
-            suggestions.place_forget()
-            return
+        #if not matching_songs:
+        #    suggestions.place_forget()
+        #    return
         
         suggestions.delete(0, tk.END)
-        for song in matching_songs[:20]:
-            suggestions.insert(tk.END, song)
-        
+        #for song in matching_songs[:20]:
+        #    suggestions.insert(tk.END, song)
+        for i, row in matching_songs.head(20).iterrows():
+            song_data = f"{row['song_name']} - {row['artists']}"
+            suggestions.insert(tk.END, song_data)
+
         suggestions.place(x=entry.winfo_x(), y=entry.winfo_y()+entry.winfo_height(), width=entry.winfo_width())
 
     def enter_selection(event):
         selection = suggestions.get(suggestions.curselection())
+
+        sel_song_name = selection.split(" - ")[0]
+
         entry.delete(0, tk.END)
-        entry.insert(0, selection)
+        entry.insert(0, sel_song_name)
         suggestions.place_forget()
 
 
