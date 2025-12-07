@@ -37,4 +37,23 @@ pip install -r requirements.txt
 
 ## How to replicate
 
-TODO
+To reproduce everything we did:
+1. Load and clean data
+   - Rename columns of the two datasets so that they match
+   - Drop rows where song name is NaN
+   - Drop columns with NaN values
+2. Compute clusters and create KNN models
+   - Select features for the KNN model
+   - Scale the selected features
+   - Compute clusters using KMeans from sklearn.cluster
+   - Create a KNN model for each cluster using NearestNeighbors from sklearn.neighbors and euclidean distances
+   - Apply PCA using PCA from sklearn.decomposition to later create 2D visualisations
+3. Find recommendations using an input song
+   - Find the cluster that the input song is in
+   - Using the KNN model for this cluster, find n nearest neighbors (n recommendations)
+   - Convert recommendations indices to global indices to get all data about the song
+4. Visualise the recommendations
+   - Create a PCA scatterplot
+   - Plot a reduced number of songs from the dataset to increase performance
+   - Plot the initial song and recommendations so that they are distinctly marked
+   - Color the datapoints based on clustering

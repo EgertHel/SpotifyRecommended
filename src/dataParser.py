@@ -27,7 +27,7 @@ def read_data():
                             "tempo": "tempo",
                             "time_signature": "time_signature"})
     
-    # Get and merge artist popularity into 1st songs songs
+    # Get and merge artist popularity into 1st songs
     # Read artists data for 1st dataset
     artists1 = pd.read_csv("./data/rawData/artists.csv", encoding="utf-8")
     artists1 = artists1.rename(columns = {"id": "artist_id", "popularity": "artist_popularity"})
@@ -38,7 +38,7 @@ def read_data():
     )
     songs1 = songs1.explode("artist_id")
 
-    # Merge artists popularity with songs songs
+    # Merge artists popularity with songs
     songs1 = songs1.merge(artists1[["artist_id", "artist_popularity"]], on="artist_id", how="left")
     agg_dict = {col: "first" for col in songs1.columns if col != "artist_popularity"}
     agg_dict["artist_popularity"] = lambda popularities: list(popularities.dropna())
