@@ -3,7 +3,7 @@
 
 ## Overview
 
-TODO
+Discovering new music that matches personal taste can be difficult, and existing recommendation systems offer little transparency. The project aims to build a simple, interpretable recommendation engine that suggests similar songs using publicly available Spotify audio features. The goal is to help users explore music through clear logic and visual explanations rather than an opaque black-box system.
 
 ## Project structure
 ```
