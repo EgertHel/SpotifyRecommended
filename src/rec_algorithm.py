@@ -2,6 +2,7 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import NearestNeighbors
 from sklearn.cluster import KMeans
+import pandas as pd
 
 class Recommender:
     def __init__(self, songs, features, rec_amount):
@@ -12,50 +13,52 @@ class Recommender:
         songs_KNN = songs[features]
 
         self.scaler = StandardScaler()
-        X_scaled = self.scaler.fit_transform(songs_KNN)
+        self.X_scaled = pd.DataFrame(self.scaler.fit_transform(songs_KNN), index=self.songs.index, columns=self.features)
 
         clusters_n = 20
-        self.kmeans = KMeans(n_clusters=clusters_n)
-        self.songs["cluster"] = self.kmeans.fit_predict(X_scaled)
+        self.kmeans = KMeans(n_clusters=clusters_n, random_state=42)
+        self.songs["cluster"] = self.kmeans.fit_predict(self.X_scaled)
 
         self.models = {}
+        self.cluster_indices = {}
         for i in range(clusters_n):
-            cluster = X_scaled[self.songs["cluster"] == i]
+            idx = self.songs[self.songs["cluster"] == i].index
+            cluster_df = self.X_scaled.loc[idx]
             knn = NearestNeighbors(n_neighbors=self.rec_amount + 1, metric="euclidean")
-            knn.fit(cluster)
+            knn.fit(cluster_df.values)
             self.models[i] = knn
-
-        #self.model = NearestNeighbors(n_neighbors=self.rec_amount + 1, metric="euclidean")
-        #self.model.fit(X_scaled)
+            self.cluster_indices[i] = idx.to_list()
 
         self.pca = PCA(n_components=2)
-        self.songs["pca_x"], self.songs["pca_y"] = self.pca.fit_transform(X_scaled).T
+        self.songs["pca_x"], self.songs["pca_y"] = self.pca.fit_transform(self.X_scaled).T
 
-    def recommend(self, song_name):
-        song = self.songs[self.songs["song_name"] == song_name]
+    def recommend(self, song_id):
+        song = self.songs[self.songs["song_id"] == song_id]
 
         if len(song) == 0:
             print("Could not find the song")
             return
         
-        song_features = song[self.features]
-        song_scaled = self.scaler.transform(song_features)
+        song_idx = song.index[0]
+        song_scaled = self.X_scaled.loc[[song_idx]].values
 
-        cluster = self.kmeans.predict(song_scaled)[0]
-        songs_in_cluster = self.songs["cluster"] == cluster
-
-        cluster_indices = self.songs.index[songs_in_cluster]
+        cluster = song["cluster"].iloc[0]
         model = self.models[cluster]
+        cluster_idxs = self.cluster_indices[cluster]
 
         distances, indices = model.kneighbors(song_scaled, n_neighbors=self.rec_amount + 1)
 
-        rec_indices = cluster_indices[indices[0][1:]]
+        rec_songs = indices[0][1:]
+        rec_indices = [cluster_idxs[pos] for pos in rec_songs]
 
-        return self.songs[["song_id", "song_name", "cluster", "artists"]].iloc[rec_indices]
+        
+        print("Input cluster:", cluster)
+
+        return self.songs.loc[rec_indices, ["song_id", "song_name", "artists", "cluster"]]
 
     def initialize_plot(self, ax, canvas):
         ax.clear()
-        sample = self.songs.sample(400)  # show subset for readability
+        sample = self.songs.sample(400)
 
         ax.scatter(sample["pca_x"], sample["pca_y"], s=8, alpha=0.3, label="All songs")
         ax.set_title("Song Space (PCA)")
@@ -64,22 +67,24 @@ class Recommender:
 
         canvas.draw()
 
-    def update_plot(self, song_name, rec_ids, ax, canvas):
+    def update_plot(self, song_id, rec_ids, ax, canvas):
         ax.clear()
 
         # Background songs
         sample = self.songs.sample(400)
-        ax.scatter(sample["pca_x"], sample["pca_y"], s=8, alpha=0.25, color="gray")
+        ax.scatter(sample["pca_x"], sample["pca_y"], c=sample["cluster"], s=8, alpha=0.25)
 
         # Input song
-        input_song = self.songs[self.songs["song_name"] == song_name]
+        input_song = self.songs[self.songs["song_id"] == song_id]
         ax.scatter(input_song["pca_x"], input_song["pca_y"],
-                   color="red", s=150, marker="*", label="Input Song")
+                   c=input_song["cluster"], s=150, marker="*", label="Input Song")
 
         # Recommended songs
         rec_songs = self.songs[self.songs["song_id"].isin(rec_ids)]
         ax.scatter(rec_songs["pca_x"], rec_songs["pca_y"],
-                   color="blue", s=50, label="Recommended Songs")
+                   c=rec_songs["cluster"], s=120, marker=".", label="Recommended Songs")
+
+        print(rec_songs["cluster"])
 
         # Connect lines
         for _, r in rec_songs.iterrows():
