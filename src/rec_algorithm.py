@@ -70,21 +70,28 @@ class Recommender:
     def update_plot(self, song_id, rec_ids, ax, canvas):
         ax.clear()
 
-        # Background songs
+        # Background songs (smaller)
         sample = self.songs.sample(400)
         ax.scatter(sample["pca_x"], sample["pca_y"], c=sample["cluster"], s=8, alpha=0.25)
 
-        # Input song
+        # Determine input song cluster
         input_song = self.songs[self.songs["song_id"] == song_id]
+        input_cluster = input_song["cluster"].iloc[0]
+
+        # Sample songs from the input cluster (excluding the input song)
+        cluster_songs = self.songs[(self.songs["cluster"] == input_cluster) & 
+                                (self.songs["song_id"] != song_id)].sample(n=min(50, len(self.songs[self.songs["cluster"] == input_cluster])-1))
+        ax.scatter(cluster_songs["pca_x"], cluster_songs["pca_y"],
+                c=cluster_songs["cluster"], s=23, alpha=0.2, label=f"Cluster {input_cluster} Sample")
+
+        # Input song (largest)
         ax.scatter(input_song["pca_x"], input_song["pca_y"],
-                   c=input_song["cluster"], s=150, marker="*", label="Input Song")
+                c=input_song["cluster"], s=150, marker="*", label="Input Song")
 
         # Recommended songs
         rec_songs = self.songs[self.songs["song_id"].isin(rec_ids)]
         ax.scatter(rec_songs["pca_x"], rec_songs["pca_y"],
-                   c=rec_songs["cluster"], s=120, marker=".", label="Recommended Songs")
-
-        print(rec_songs["cluster"])
+                c=rec_songs["cluster"], s=120, marker=".", label="Recommended Songs")
 
         # Connect lines
         for _, r in rec_songs.iterrows():
@@ -94,5 +101,8 @@ class Recommender:
 
         ax.set_title("Recommended Songs in PCA Space")
         ax.legend()
+        fig = ax.get_figure()
+        fig.savefig("temp_pca_plot.png", dpi=600, bbox_inches='tight')
+        print("PCA plot saved as temp_pca_plot.png")
 
         canvas.draw()
