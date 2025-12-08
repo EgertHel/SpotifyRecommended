@@ -27,7 +27,7 @@ class Recommender:
             knn = NearestNeighbors(n_neighbors=self.rec_amount + 1, metric="euclidean")
             knn.fit(cluster_df.values)
             self.models[i] = knn
-            self.cluster_indices[i] = idx.to_list()
+            self.cluster_indices[i] = cluster_df.index.tolist()
 
         self.pca = PCA(n_components=2)
         self.songs["pca_x"], self.songs["pca_y"] = self.pca.fit_transform(self.X_scaled).T
@@ -52,7 +52,6 @@ class Recommender:
         rec_indices = [cluster_idxs[pos] for pos in rec_songs]
 
         
-        print("Input cluster:", cluster)
 
         return self.songs.loc[rec_indices, ["song_id", "song_name", "artists", "cluster"]]
 

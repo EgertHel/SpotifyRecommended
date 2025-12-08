@@ -88,7 +88,7 @@ def clean_data(songs: pd.DataFrame) -> pd.DataFrame:
     obj_cols = songs.select_dtypes(include="object").columns
     songs[obj_cols] = songs[obj_cols].apply(lambda col: col.str.strip())
 
-    songs = songs.drop_duplicates()
+    songs = songs[songs["song_id"].duplicated(keep=False) == False]
     songs.dropna(subset = ["song_name"], inplace=True)
     songs["explicit"] = songs["explicit"].fillna(0.0)
 
